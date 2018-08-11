@@ -3,39 +3,47 @@ Heroku Buildpack for create-react-app
 
 Deploy React.js web apps generated with [create-react-app](https://github.com/facebookincubator/create-react-app). Automates deployment with the built-in bundler and serves it up via [Nginx](http://nginx.org/en/). See the [introductory blog post](https://blog.heroku.com/deploying-react-with-zero-configuration) and entry in [Heroku elements](https://elements.heroku.com/buildpacks/mars/create-react-app-buildpack).
 
-* 🚦 [Purpose](#purpose)
-* ⚠️ [Requirements](#requires)
-* 🚀 [Quick Start](#quick-start)
-* 🛠 [Usage](#usage)
-  1. [Generate a React app](#generate-a-react-app)
-  1. [Make it a git repo](#make-it-a-git-repo)
-  1. [Create the Heroku app](#create-the-heroku-app)
-  1. [Commit & deploy ♻️](#commit--deploy-️)
-  1. [Continue Development](#continue-development)
-* 👓 [Customization](#customization)
-  * [Web server](#web-server)
-    * [Routing clean URLs](#routing-clean-urls)
-    * [HTTPS-only](#https-only)
-    * [Proxy](#proxy)
-  * [Environment variables](#environment-variables)
-    * [Set vars on Heroku](#set-vars-on-heroku)
-    * [Set vars for local dev](#set-vars-for-local-dev)
-    * [Compile-time vs Runtime](#compile-time-vs-runtime)
-      * [Compile-time config](#compile-time-configuration)
-      * [Runtime config](#runtime-configuration)
-    * [using an Add-on's config](#add-on-config-vars)
-* 🕵️ [Troubleshooting](#troubleshooting)
-* 📍 [Version compatibility](#version-compatibility)
-* 🏙 [Architecture](#architecture-)
+* 🚦 [Purpose](#user-content-purpose)
+* ⚠️ [Requirements](#user-content-requires)
+* 🚀 [Quick Start](#user-content-quick-start)
+* 🛠 [Usage](#user-content-usage)
+  1. [Generate a React app](#user-content-generate-a-react-app)
+  1. [Make it a git repo](#user-content-make-it-a-git-repo)
+  1. [Create the Heroku app](#user-content-create-the-heroku-app)
+  1. [Commit & deploy ♻️](#user-content-commit--deploy-️)
+  1. [Continue Development](#user-content-continue-development)
+  1. [Push to Github](#user-content-push-to-github)
+  1. [Testing](#user-content-testing)
+* 👓 [Customization](#user-content-customization)
+  * [Procfile](#user-content-procfile)
+  * [Web server](#user-content-web-server)
+    * [Routing clean URLs](#user-content-routing-clean-urls)
+    * [HTTPS-only](#user-content-https-only)
+    * [Proxy](#user-content-proxy)
+  * [Environment variables](#user-content-environment-variables)
+    * [Set vars on Heroku](#user-content-set-vars-on-heroku)
+    * [Set vars for local dev](#user-content-set-vars-for-local-dev)
+    * [Compile-time vs Runtime](#user-content-compile-time-vs-runtime)
+      * [Compile-time config](#user-content-compile-time-configuration)
+      * [Runtime config](#user-content-runtime-configuration)
+    * [using an Add-on's config](#user-content-add-on-config-vars)
+  * [npm Private Packages](#user-content-npm-private-packages)
+* 🕵️ [Troubleshooting](#user-content-troubleshooting)
+* 📍 [Version compatibility](#user-content-version-compatibility)
+* 🏙 [Architecture](#user-content-architecture-)
 
 -----
 
 Purpose
 -------
 
-**This buildpack deploys a React UI as a static web site.** The [Nginx](http://nginx.org/en/) web server provides optimum performance and security for the runtime.
+**This buildpack deploys a React UI as a static web site.** The [Nginx](http://nginx.org/en/) web server provides optimum performance and security for the runtime. See [Architecture](#user-content-architecture-) for details.
 
-If your goal is to combine React UI + API (Node, Ruby, Python…) into a *single app*, then this buildpack is not the answer. The simplest combined solution is to use [create-react-app + Node.js server](https://github.com/mars/heroku-cra-node).  See also: [create-react-app + Rails 5 server](https://medium.com/superhighfives/a-top-shelf-web-stack-rails-5-api-activeadmin-create-react-app-de5481b7ec0b).
+If your goal is to combine React UI + API (Node, Ruby, Python…) into a *single app*, then this buildpack is not the answer. The simplest combined solution is all javascript:
+
+▶️ **[create-react-app + Node.js server](https://github.com/mars/heroku-cra-node)** on Heroku
+
+Combination with other languages is possible too, like [create-react-app + Rails 5 server](https://medium.com/superhighfives/a-top-shelf-web-stack-rails-5-api-activeadmin-create-react-app-de5481b7ec0b).
 
 Requires
 --------
@@ -51,7 +59,7 @@ Requires
 Quick Start
 -----------
 
-Ensure [requirements](#requires) are met, then execute the following in a terminal.
+Ensure [requirements](#user-content-requires) are met, then execute the following in a terminal.
 
 ✏️ *Replace `$APP_NAME` with a name for your unique app.*
 
@@ -66,7 +74,10 @@ git push heroku master
 heroku open
 ```
 
-For explanation about these steps, continue reading the next section.
+Once deployed, [continue development](#user-content-continue-development) 🌱
+
+For explanation about these steps, continue reading the [next section](#user-content-usage).
+
 
 Usage
 -----
@@ -86,7 +97,7 @@ cd my-app
 git init
 ```
 
-At this point, this new repo is local, only on your computer. Eventually, you may want to [push to Github](#push-to-github).
+At this point, this new repo is local, only on your computer. Eventually, you may want to [push to Github](#user-content-push-to-github).
 
 ### Create the Heroku app
 
@@ -130,9 +141,40 @@ Then, commit & deploy ♻️
 
 Eventually, to share, collaborate, or simply back-up your code, [create an empty repo at Github](https://github.com/new), and then follow the instructions shown on the repo to **push an existing repository from the command line**.
 
+### Testing
+
+Use [create-react-app's built-in Jest testing](https://github.com/facebookincubator/create-react-app/blob/master/packages/react-scripts/template/README.md#user-content-running-tests) or whatever testing library you prefer.
+
+[Heroku CI](https://devcenter.heroku.com/articles/heroku-ci) is supported with minimal configuration. The CI integration is compatible with npm & yarn (see [`bin/test`](bin/test)).
+
+#### Minimal `app.json`
+
+Heroku CI uses [`app.json`](https://devcenter.heroku.com/articles/app-json-schema) to provision test apps. To support Heroku CI, commit this minimal example `app.json`:
+
+```json
+{
+  "buildpacks": [
+    {
+      "url": "https://github.com/mars/create-react-app-buildpack"
+    }
+  ]
+}
+```
 
 Customization
 -------------
+
+### Procfile
+
+Heroku apps may declare what processes are launched for a successful deployment by way of the [`Procfile`](https://devcenter.heroku.com/articles/procfile). This buildpack's default process comes from [`heroku/static` buildpack](https://github.com/heroku/heroku-buildpack-static). (See: 🏙 [Architecture](#user-content-architecture-)). The implicit `Procfile` to start the static web server is:
+
+```
+web: bin/boot
+```
+
+To customize an app's processes, commit a `Procfile` and deploy. Include `web: bin/boot` to launch the default web process, or you may replace the default web process. Additional [process types](https://devcenter.heroku.com/articles/procfile#declaring-process-types) may be added to run any number of dynos with whatever arbitrary commands you want, and scale each independently.
+
+🚦 *If replacing the default web process, please check this buildpack's [Purpose](#user-content-purpose) to avoid misusing this buildpack (such as running a Node server) which can lead to confusing deployment issues.*
 
 ### Web server
 
@@ -146,19 +188,20 @@ The default `static.json`, if it does not exist in the repo, is:
 
 ### Routing clean URLs
 
-By default, [React Router](https://github.com/reactjs/react-router) (not included) uses hash-based URLs like `https://example.com/index.html#/users/me/edit`. This is nice & easy when getting started with local development, but for a public app you probably want real URLs like `https://example.com/users/me/edit`.
+[React Router](https://github.com/ReactTraining/react-router) (not included) may easily use hash-based URLs like `https://example.com/index.html#/users/me/edit`. This is nice & easy when getting started with local development, but for a public app you probably want real URLs like `https://example.com/users/me/edit`.
 
-Create a `static.json` file to configure the web server for clean [`browserHistory` URLs with React Router](https://github.com/reactjs/react-router/blob/master/docs/guides/Histories.md#browserhistory):
+Create a `static.json` file to configure the web server for clean [`browserHistory` with React Router v3](https://github.com/ReactTraining/react-router/blob/v3/docs/guides/Histories.md#browserhistory) & [`BrowserRouter` with v4](https://reacttraining.com/react-router/web/api/BrowserRouter):
 
 ```json
 {
   "root": "build/",
-  "clean_urls": false,
   "routes": {
     "/**": "index.html"
   }
 }
 ```
+
+👓 See [custom routing w/ the static buildpack](https://github.com/heroku/heroku-buildpack-static#custom-routes).
 
 ### HTTPS-only
 
@@ -166,6 +209,7 @@ Enforce secure connections by automatically redirecting insecure requests to **h
 
 ```json
 {
+  "root": "build/",
   "https_only": true
 }
 ```
@@ -174,6 +218,8 @@ Prevent downgrade attacks with [HTTP strict transport security](https://develope
 
 ```json
 {
+  "root": "build/",
+  "https_only": true,
   "headers": {
     "/**": {
       "Strict-Transport-Security": "max-age=7776000"
@@ -186,12 +232,31 @@ Prevent downgrade attacks with [HTTP strict transport security](https://develope
 
 ### Proxy
 
-Proxy XHR requests from the React UI in the browser to API backends. Prevent same-origin errors when [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/Access_control_CORS) is not available on the backend.
+Proxy XHR requests from the React UI in the browser to API backends. Use to prevent same-origin errors when [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/Access_control_CORS) is not supported on the backend.
 
-Configure using [Proxy Backends from the static site buildpack](https://github.com/heroku/heroku-buildpack-static/blob/master/README.md#proxy-backends). Add `"proxies"` to `static.json`:
+#### Proxy URL prefix
+
+To make calls through the proxy, use relative URL's in the React app which will be proxied to the configured target URL. For the example URL prefix of `/api/`, here's how the proxy would rewrite the requests:
+
+```
+/api/search-items
+  → https://backend.example.com/search-items
+  
+/api/users/me
+  → https://backend.example.com/users/me
+```
+
+You may choose any prefix and may have multiple proxies with different prefixes.
+
+#### Proxy for deployment
+
+The [`heroku/static` buildpack](https://github.com/heroku/heroku-buildpack-static) (see: 🏙 [Architecture](#user-content-architecture-))  provides [Proxy Backends configuration](https://github.com/heroku/heroku-buildpack-static/blob/master/README.md#proxy-backends) to utilize  Nginx for high-performance proxies in production.
+
+Add `"proxies"` to `static.json`:
 
 ```json
 {
+  "root": "build/",
   "proxies": {
     "/api/": {
       "origin": "${API_URL}"
@@ -203,13 +268,34 @@ Configure using [Proxy Backends from the static site buildpack](https://github.c
 Then, point the React UI app to a specific backend API:
 
 ```bash
-heroku config:set API_URL="https://api.example.com"
+heroku config:set API_URL="https://backend.example.com"
 ```
+
+#### Proxy for local development
+
+create-react-app itself provides a built-in [proxy for development](https://github.com/facebookincubator/create-react-app/blob/master/packages/react-scripts/template/README.md#user-content-proxying-api-requests-in-development). This may be configured to match the behavior of [proxy for deployment](#user-content-proxy-for-deployment).
+
+Add `"proxy"` to `package.json`:
+
+```json
+{
+  "proxy": {
+    "/api": {
+      "target": "http://localhost:8000",
+      "pathRewrite": {
+        "^/api": "/"
+      }
+    }
+  }
+}
+```
+
+Replace `http://localhost:8000` with the URL to your local or remote backend service.
 
 
 ### Environment variables
 
-[`REACT_APP_*` environment variables](https://github.com/facebookincubator/create-react-app/blob/v0.2.3/template/README.md#adding-custom-environment-variables) are supported with this buildpack.
+[`REACT_APP_*` environment variables](https://github.com/facebookincubator/create-react-app/blob/master/packages/react-scripts/template/README.md#adding-custom-environment-variables) are supported with this buildpack.
 
 🤐 *Be careful not to export secrets. These values may be accessed by anyone who can see the React app.*
 
@@ -234,7 +320,7 @@ REACT_APP_CLIENT_ID=XyzxYzxyZ
 
 Two versions of variables are supported. In addition to compile-time variables applied during [build](https://github.com/facebookincubator/create-react-app#npm-run-build) the app supports variables set at runtime, applied as each web dyno starts-up.
 
-Requirement | [Compile-time](#compile-time-configuration) | [Runtime](#runtime-configuration)
+Requirement | [Compile-time](#user-content-compile-time-configuration) | [Runtime](#user-content-runtime-configuration)
 :--- |:---:|:---: 
 never changes for a build | ✓ |  
 support for [continuous delivery](https://www.heroku.com/continuous-delivery) |  | ✓
@@ -243,7 +329,7 @@ different values for staging & production (in a [pipeline](https://devcenter.her
 ex: `REACT_APP_BUILD_VERSION` (static fact about the bundle) | ✓ | 
 ex: `REACT_APP_DEBUG_ASSERTIONS` ([prune code from bundle](https://webpack.github.io/docs/list-of-plugins.html#defineplugin)) | ✓ | 
 ex: `REACT_APP_API_URL` (transient, external reference) |   | ✓
-ex: `REACT_APP_FILEPICKER_API_KEY` ([Add-on config vars](#add-on-config-vars)) |   | ✓
+ex: `REACT_APP_FILEPICKER_API_KEY` ([Add-on config vars](#user-content-add-on-config-vars)) |   | ✓
 
 ### Compile-time configuration
 
@@ -300,7 +386,7 @@ Use a custom [`.profile.d` script](https://devcenter.heroku.com/articles/buildpa
    ```bash
    export REACT_APP_ADDON_CONFIG=${ADDON_CONFIG:-}
    ```
-1. set-up & use [Runtime configuration](#runtime-configuration) to access the variables
+1. set-up & use [Runtime configuration](#user-content-runtime-configuration) to access the variables
 
 For example, to use the API key for the [Filestack](https://elements.heroku.com/addons/filepicker) JS image uploader:
 
@@ -308,9 +394,40 @@ For example, to use the API key for the [Filestack](https://elements.heroku.com/
 export REACT_APP_FILEPICKER_API_KEY=${FILEPICKER_API_KEY:-}
 ```
 
+npm Private Packages
+-------------------
+Private modules are supported during build.
+
+1. Setup your app with a `.npmrc` file following [npm's guide for CI/deployment](https://docs.npmjs.com/private-modules/ci-server-config).
+1. Set your secret in the `NPM_TOKEN` config var:
+
+    ```bash
+    heroku config:set NPM_TOKEN=xxxxx
+    ```
+
 Troubleshooting
 ---------------
 
+1. Confirm that your app is using this buildpack:
+
+    ```bash
+    heroku buildpacks
+    ```
+    
+    If it's not using `create-react-app-buildpack`, then set it:
+
+    ```bash
+    heroku buildpacks:set https://github.com/mars/create-react-app-buildpack.git
+    ```
+
+    …and deploy with the new buildpack:
+
+    ```bash
+    git commit --allow-empty -m 'Switch to create-react-app-buildpack'
+    git push heroku master
+    ```
+    
+    If the error still occurs, then at least we know it's really using this buildpack! Proceed with troubleshooting.
 1. Check this README to see if it already mentions the issue.
 1. Search our [issues](https://github.com/mars/create-react-app-buildpack/issues?utf8=✓&q=is%3Aissue%20) to see if someone else has experienced the same problem.
 1. Search the internet for mentions of the error message and its subject module, e.g. `ENOENT "node-sass"`
@@ -322,7 +439,7 @@ Troubleshooting
 Version compatibility
 ---------------------
 
-This buildpack will never intentionally cause previously deployed apps to become undeployable. Using master [as directed in the main instructions](#create-the-heroku-app) will always deploy an app with the most recent version of this buildpack.
+This buildpack will never intentionally cause previously deployed apps to become undeployable. Using master [as directed in the main instructions](#user-content-create-the-heroku-app) will always deploy an app with the most recent version of this buildpack.
 
 [Releases are tagged](https://github.com/mars/create-react-app-buildpack/releases), so you can lock an app to a specific version, if that kind of determinism pleases you:
 
@@ -338,18 +455,22 @@ heroku buildpacks:set https://github.com/mars/create-react-app-buildpack.git#v1.
 Architecture 🏙
 ------------
 
-This buildpack composes several buildpacks (specified in [`.buildpacks`](.buildpacks)) to support **no-configuration deployment** on Heroku:
+This buildpack combines several buildpacks, specified in [`.buildpacks`](.buildpacks), to support **zero-configuration deployment** on Heroku:
 
 1. [`heroku/nodejs` buildpack](https://github.com/heroku/heroku-buildpack-nodejs)
-   * complete Node.js enviroment to support the webpack build
-   * `node_modules` cached between deployments
+   * installs complete `node`, puts it on the `$PATH`
+   * version specified in [`package.json`, `engines.node`](https://devcenter.heroku.com/articles/nodejs-support#specifying-a-node-js-version)
+   * `node_modules/` cached between deployments
 2. [`mars/create-react-app-inner-buildpack`](https://github.com/mars/create-react-app-inner-buildpack)
-   * enables [runtime environment variables](#runtime-configuration)
-   * generates the [default `static.json`](#customization)
-   * performs the production build for create-react-app, `npm run build`
+   * production build for create-react-app
+   * generates the [default `static.json`](#user-content-web-server)
+   * enables [runtime environment variables](#user-content-environment-variables)
 3. [`heroku/static` buildpack](https://github.com/heroku/heroku-buildpack-static)
    * [Nginx](http://nginx.org/en/) web server
-   * handy static website & SPA (single-page app) [customization options](https://github.com/heroku/heroku-buildpack-static#configuration)
+   * launches via `bin/boot`
+   * configure via `static.json`; see [options specific to this buildpack](#user-content-web-server) and [all options](https://github.com/heroku/heroku-buildpack-static#configuration)
+
+Runtime processes are launched based on the last buildpack's default processes, the static buildpack's Nginx web server. Processes may be customized with a [Procfile](#user-content-procfile).
 
 
 ### General-purpose SPA deployment
@@ -359,4 +480,4 @@ This buildpack composes several buildpacks (specified in [`.buildpacks`](.buildp
 This buildpack can deploy any SPA [single-page app] as long as it meets the following requirements:
 
 * `npm run build` performs the transpile/bundling
-* the file `build/index.html` or [the root specified in `static.json`](#customization) exists at runtime.
+* the file `build/index.html` or [the root specified in `static.json`](#user-content-customization) exists at runtime.
