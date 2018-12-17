@@ -1,7 +1,7 @@
 Heroku Buildpack for create-react-app
 =====================================
 
-Deploy React.js web apps generated with [create-react-app](https://github.com/facebookincubator/create-react-app). Automates deployment with the built-in bundler and serves it up via [Nginx](http://nginx.org/en/). See the [introductory blog post](https://blog.heroku.com/deploying-react-with-zero-configuration) and entry in [Heroku elements](https://elements.heroku.com/buildpacks/mars/create-react-app-buildpack).
+Deploy React.js web apps generated with [create-react-app](https://github.com/facebook/create-react-app). Automates deployment with the built-in bundler and serves it up via [Nginx](http://nginx.org/en/). See the [introductory blog post](https://blog.heroku.com/deploying-react-with-zero-configuration) and entry in [Heroku elements](https://elements.heroku.com/buildpacks/mars/create-react-app-buildpack).
 
 * 🚦 [Purpose](#user-content-purpose)
 * ⚠️ [Requirements](#user-content-requires)
@@ -26,6 +26,7 @@ Deploy React.js web apps generated with [create-react-app](https://github.com/fa
     * [Compile-time vs Runtime](#user-content-compile-time-vs-runtime)
       * [Compile-time config](#user-content-compile-time-configuration)
       * [Runtime config](#user-content-runtime-configuration)
+        * [Custom bundle location](#user-content-custom-bundle-location)
     * [using an Add-on's config](#user-content-add-on-config-vars)
   * [npm Private Packages](#user-content-npm-private-packages)
 * 🕵️ [Troubleshooting](#user-content-troubleshooting)
@@ -53,21 +54,19 @@ Requires
   * [a free account](https://signup.heroku.com)
 * [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
 * [Node.js](https://nodejs.org)
-* [create-react-app](https://github.com/facebookincubator/create-react-app)
-  * `npm install -g create-react-app`
 
 Quick Start
 -----------
 
 Ensure [requirements](#user-content-requires) are met, then execute the following in a terminal.
 
-✏️ *Replace `$APP_NAME` with a name for your unique app.*
+✏️ *Replace `$APP_NAME` with the name for your unique app.*
 
 ```bash
-create-react-app $APP_NAME
+npx create-react-app@2.x $APP_NAME
 cd $APP_NAME
 git init
-heroku create $APP_NAME --buildpack https://github.com/mars/create-react-app-buildpack.git
+heroku create $APP_NAME --buildpack mars/create-react-app
 git add .
 git commit -m "Start with create-react-app"
 git push heroku master
@@ -84,12 +83,15 @@ Usage
 
 ### Generate a React app
 
+✏️ *Replace `$APP_NAME` with the name for your unique app.*
+
 ```bash
-create-react-app my-app
-cd my-app
+npx create-react-app@2.x $APP_NAME
+cd $APP_NAME
 ```
 
-* If [yarn](https://yarnpkg.com) is installed locally, the new app will use it instead of [npm](https://www.npmjs.com).
+* [npx](https://medium.com/@maybekatz/introducing-npx-an-npm-package-runner-55f7d4bd282b) comes with npm 5.2+ and higher, see [instructions for older npm versions](https://gist.github.com/gaearon/4064d3c23a77c74a3614c498a8bb1c5f)
+* if [yarn](https://yarnpkg.com) is installed locally, the new app will use it instead of [npm](https://www.npmjs.com)
 
 ### Make it a git repo
 
@@ -101,17 +103,17 @@ At this point, this new repo is local, only on your computer. Eventually, you ma
 
 ### Create the Heroku app
 
-```bash
-heroku create $APP_NAME --buildpack https://github.com/mars/create-react-app-buildpack.git
-```
+✏️ *Replace `$APP_NAME` with the name for your unique app.*
 
-✏️ *Replace `$APP_NAME` with a name for your unique app.*
+```bash
+heroku create $APP_NAME --buildpack mars/create-react-app
+```
 
 This command:
 
-* sets the [app name](https://devcenter.heroku.com/articles/creating-apps#creating-a-named-app) & its URL `https://my-app-name.herokuapp.com`
-* sets the [buildpack](https://devcenter.heroku.com/articles/buildpacks) to deploy a `create-react-app` app
-* configures the [`heroku` remote](https://devcenter.heroku.com/articles/git#creating-a-heroku-remote) in the local git repo, so `git push heroku master` will push to this new Heroku app.
+* sets the [app name](https://devcenter.heroku.com/articles/creating-apps#creating-a-named-app) & its default URL `https://$APP_NAME.herokuapp.com`
+* sets the app to use this [buildpack](https://devcenter.heroku.com/articles/buildpacks)
+* configures the [`heroku` git remote](https://devcenter.heroku.com/articles/git#creating-a-heroku-remote) in the local repo, so `git push heroku master` will push to this new Heroku app.
 
 ### Commit & deploy ♻️
 
@@ -119,6 +121,14 @@ This command:
 git add .
 git commit -m "Start with create-react-app"
 git push heroku master
+```
+
+…or if you are ever working on a branch other than `master`:
+
+✏️ *Replace `$BRANCH_NAME` with the name for the current branch.*
+
+```bash
+git push heroku $BRANCH_NAME:master
 ```
 
 ### Visit the app's public URL in your browser
@@ -155,7 +165,7 @@ Heroku CI uses [`app.json`](https://devcenter.heroku.com/articles/app-json-schem
 {
   "buildpacks": [
     {
-      "url": "https://github.com/mars/create-react-app-buildpack"
+      "url": "mars/create-react-app"
     }
   ]
 }
@@ -180,17 +190,23 @@ To customize an app's processes, commit a `Procfile` and deploy. Include `web: b
 
 The web server may be [configured via the static buildpack](https://github.com/heroku/heroku-buildpack-static#configuration).
 
+The config file `static.json` should be committed at the root of the repo. It will not be recognized, if this file in a sub-directory
+
 The default `static.json`, if it does not exist in the repo, is:
 
 ```json
 { "root": "build/" }
 ```
 
+### Changing the root
+
+If a different web server `"root"` is specified, such as with a highly customized, ejected create-react-app project, then the new bundle location may need to be [set to enable runtime environment variables](#user-content-custom-bundle-location).
+
 ### Routing clean URLs
 
 [React Router](https://github.com/ReactTraining/react-router) (not included) may easily use hash-based URLs like `https://example.com/index.html#/users/me/edit`. This is nice & easy when getting started with local development, but for a public app you probably want real URLs like `https://example.com/users/me/edit`.
 
-Create a `static.json` file to configure the web server for clean [`browserHistory` with React Router v3](https://github.com/ReactTraining/react-router/blob/v3/docs/guides/Histories.md#browserhistory) & [`BrowserRouter` with v4](https://reacttraining.com/react-router/web/api/BrowserRouter):
+Create a `static.json` file at the root of the repo to configure the web server for clean [`browserHistory` with React Router v3](https://github.com/ReactTraining/react-router/blob/v3/docs/guides/Histories.md#browserhistory) & [`BrowserRouter` with v4](https://reacttraining.com/react-router/web/api/BrowserRouter):
 
 ```json
 {
@@ -295,9 +311,9 @@ Replace `http://localhost:8000` with the URL to your local or remote backend ser
 
 ### Environment variables
 
-[`REACT_APP_*` environment variables](https://github.com/facebookincubator/create-react-app/blob/master/packages/react-scripts/template/README.md#adding-custom-environment-variables) are supported with this buildpack.
+[`REACT_APP_*` environment variables](https://github.com/facebook/create-react-app/blob/master/packages/react-scripts/template/README.md#adding-custom-environment-variables) are fully supported with this buildpack.
 
-🤐 *Be careful not to export secrets. These values may be accessed by anyone who can see the React app.*
+🚫🤐 ***Not for secrets.** These values may be accessed by anyone who can see the React app.*
 
 ### [Set vars on Heroku](https://devcenter.heroku.com/articles/config-vars)
 
@@ -333,7 +349,23 @@ ex: `REACT_APP_FILEPICKER_API_KEY` ([Add-on config vars](#user-content-add-on-co
 
 ### Compile-time configuration
 
-♻️ The app must be re-deployed for compiled changes to take effect.
+Supports [`REACT_APP_`](https://github.com/facebook/create-react-app/blob/master/packages/react-scripts/template/README.md#adding-custom-environment-variables), `NODE_`, `NPM_`, & `HEROKU_` prefixed variables.
+
+Use Node's [`process.env` object](https://nodejs.org/dist/latest-v10.x/docs/api/process.html#process_process_env).
+
+```javascript
+import React, { Component } from 'react';
+
+class App extends Component {
+  render() {
+    return (
+      <code>Runtime env var example: { process.env.REACT_APP_HELLO }</code>
+    );
+  }
+}
+```
+
+♻️ The app must be re-deployed for compiled changes to take effect, because during the build, these references will be replaced with their quoted string value.
 
 ```bash
 heroku config:set REACT_APP_HELLO='I love sushi!'
@@ -342,9 +374,17 @@ git commit --allow-empty -m "Set REACT_APP_HELLO config var"
 git push heroku master
 ```
 
+Only `REACT_APP_` vars are replaced in create-react-app's build. To make any other variables visible to React, they must be prefixed for the build command in `package.json`, like this:
+
+```bash
+REACT_APP_HEROKU_SLUG_COMMIT=$HEROKU_SLUG_COMMIT react-scripts build
+```
+
 ### Runtime configuration
 
-*Requires at least create-react-app 0.7.*
+Supports only [`REACT_APP_`](https://github.com/facebook/create-react-app/blob/master/packages/react-scripts/template/README.md#adding-custom-environment-variables) prefixed variables.
+
+🚫🤐 ***Not for secrets.** These values may be accessed by anyone who can see the React app.*
 
 Install the [runtime env npm package](https://www.npmjs.com/package/@mars/heroku-js-runtime-env):
 
@@ -373,11 +413,29 @@ class App extends Component {
 
 ⚠️ *Avoid setting backslash escape sequences, such as `\n`, into Runtime config vars. Use literal UTF-8 values only; they will be automatically escaped.*
 
+#### Custom bundle location
+
+If the javascript bundle location is customized, such as with an ejected created-react-app project, then the runtime may not  be able to locate the bundle to inject runtime variables.
+
+To solve this so the runtime can locate the bundle, set the custom bundle path:
+
+```bash
+heroku config:set JS_RUNTIME_TARGET_BUNDLE=/app/my/custom/path/js/*.js
+```
+
+✳️ *Note this path is a `*` glob, selecting multiple files, because as of create-react-app version 2 the [bundle is split](https://reactjs.org/blog/2018/10/01/create-react-app-v2.html).*
+
+To unset this config and use the default path for **create-react-app**'s bundle, `/app/build/static/js/*.js`:
+
+```bash
+heroku config:unset JS_RUNTIME_TARGET_BUNDLE
+```
+
 ### Add-on config vars
 
-🤐 *Be careful not to export secrets. These values may be accessed by anyone who can see the React app.*
+🚫🤐 ***Be careful not to export secrets.** These values may be accessed by anyone who can see the React app.*
 
-Use a custom [`.profile.d` script](https://devcenter.heroku.com/articles/buildpack-api#profile-d-scripts) to make variables visible to the React app by prefixing them with `REACT_APP_`.
+Use a custom [`.profile.d` script](https://devcenter.heroku.com/articles/buildpack-api#profile-d-scripts) to make variables set by other components available to the React app by prefixing them with `REACT_APP_`.
 
 1. create `.profile.d/000-react-app-exports.sh`
 1. make it executable `chmod +x .profile.d/000-react-app-exports.sh`
@@ -417,7 +475,7 @@ Troubleshooting
     If it's not using `create-react-app-buildpack`, then set it:
 
     ```bash
-    heroku buildpacks:set https://github.com/mars/create-react-app-buildpack.git
+    heroku buildpacks:set mars/create-react-app
     ```
 
     …and deploy with the new buildpack:
@@ -444,10 +502,10 @@ This buildpack will never intentionally cause previously deployed apps to become
 [Releases are tagged](https://github.com/mars/create-react-app-buildpack/releases), so you can lock an app to a specific version, if that kind of determinism pleases you:
 
 ```bash
-heroku buildpacks:set https://github.com/mars/create-react-app-buildpack.git#v1.2.1
+heroku buildpacks:set https://github.com/mars/create-react-app-buildpack.git#v6.0.0
 ```
 
-✏️ *Replace `v1.2.1` with the desired [release tag](https://github.com/mars/create-react-app-buildpack/releases).*
+✏️ *Replace `v6.0.0` with the desired [release tag](https://github.com/mars/create-react-app-buildpack/releases).*
 
 ♻️ Then, commit & deploy to rebuild on the new buildpack version.
 
@@ -458,19 +516,25 @@ Architecture 🏙
 This buildpack combines several buildpacks, specified in [`.buildpacks`](.buildpacks), to support **zero-configuration deployment** on Heroku:
 
 1. [`heroku/nodejs` buildpack](https://github.com/heroku/heroku-buildpack-nodejs)
-   * installs complete `node`, puts it on the `$PATH`
+   * installs `node`, puts on the `$PATH`
    * version specified in [`package.json`, `engines.node`](https://devcenter.heroku.com/articles/nodejs-support#specifying-a-node-js-version)
    * `node_modules/` cached between deployments
+   * `NODE_ENV` at buildtime:
+     * defaults to `NODE_ENV=development` to install the build tooling of create-react-app's dev dependencies, like `react-scripts`
+     * honors specific setting of `NODE_ENV`, like `NODE_ENV=test` for [automated testing](#user-content-testing) in [`bin/test`](bin/test-compile)
+     * but forces `NODE_ENV=production` to be `development` to ensure dev dependencies are available for build
 2. [`mars/create-react-app-inner-buildpack`](https://github.com/mars/create-react-app-inner-buildpack)
    * production build for create-react-app
-   * generates the [default `static.json`](#user-content-web-server)
+     * executes the npm package's build script; create-react-app default is `react-scripts build`
+     * exposes `REACT_APP_`, `NODE_`, `NPM_`, & `HEROKU_` prefixed env vars to the build script
+     * generates a production bundle regardless of `NODE_ENV` setting
+   * sets default [web server config](#user-content-web-server) unless `static.json` already exists
    * enables [runtime environment variables](#user-content-environment-variables)
 3. [`heroku/static` buildpack](https://github.com/heroku/heroku-buildpack-static)
    * [Nginx](http://nginx.org/en/) web server
-   * launches via `bin/boot`
-   * configure via `static.json`; see [options specific to this buildpack](#user-content-web-server) and [all options](https://github.com/heroku/heroku-buildpack-static#configuration)
+   * [configure with `static.json`](#user-content-web-server) (see also [all static web server config](https://github.com/heroku/heroku-buildpack-static#user-content-configuration))
 
-Runtime processes are launched based on the last buildpack's default processes, the static buildpack's Nginx web server. Processes may be customized with a [Procfile](#user-content-procfile).
+🚀 The runtime `web` process is the [last buildpack](https://github.com/mars/create-react-app-buildpack/blob/master/.buildpacks)'s default processes. heroku-buildpack-static uses [`bin/boot`](https://github.com/heroku/heroku-buildpack-static/blob/master/bin/release) to launch its Nginx web server. Processes may be customized by committing a [Procfile](#user-content-procfile) to the app.
 
 
 ### General-purpose SPA deployment
